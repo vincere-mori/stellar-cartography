@@ -85,7 +85,7 @@ export function makeGalaxy() {
       : 3 + Math.pow(random(), 0.75) * 30;
     const arm = i % 4;
     const scatter = random() + random() + random() - 1.5;
-    const diffuse = !bulge && i % 4 === 0;
+    const diffuse = !bulge && random() < 0.28;
     const angle =
       bulge || diffuse
         ? random() * Math.PI * 2
@@ -109,7 +109,7 @@ export function makeGalaxy() {
     );
     colors.push(color.r, color.g, color.b);
     sizes.push((bulge ? 0.055 : 0.065) + Math.pow(random(), 6) * 0.24);
-    if (!bulge && !diffuse && i % 6 === 0) {
+    if (!bulge && !diffuse && random() < 1 / 6) {
       dustPositions.push(x, y - 0.1, z);
       const c = new THREE.Color(i % 13 === 0 ? "#b2889e" : "#71859f");
       dustColors.push(c.r, c.g, c.b);
