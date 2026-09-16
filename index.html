@@ -1,1269 +1,354 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stellar Cartography — Deep Space Explorer</title>
-    <meta name="description" content="Interactive 3D cosmic map with relativistic simulations of black holes, pulsars, wormholes and megastructures">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;600;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=5">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
-</head>
-<body>
-    <!-- ========== BOOT TERMINAL ========== -->
-    <div id="boot-screen">
-        <div id="boot-scanline"></div>
-
-        <!-- Left side panels -->
-        <div id="boot-side-left" class="boot-side">
-            <div class="boot-panel">
-                <div class="bp-title">▸ GRAV FIELD SCANNER</div>
-                <div class="bp-body" id="bp-grav"></div>
-            </div>
-            <div class="boot-panel">
-                <div class="bp-title">▸ PARTICLE FLUX</div>
-                <div class="bp-body" id="bp-flux"></div>
-            </div>
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#090d12" />
+    <meta
+      name="description"
+      content="Исследуйте Млечный Путь: выбирайте звёзды, планеты и туманности, отправляйтесь в полёт и рассматривайте их в 3D."
+    />
+    <title>Stellar Cartography | Млечный Путь</title>
+    <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
+    <link rel="stylesheet" href="./style.css" />
+    <script type="importmap">
+      { "imports": { "three": "./vendor/three.module.js" } }
+    </script>
+  </head>
+  <body data-mode="map">
+    <header class="header">
+      <a
+        class="brand"
+        href="#"
+        aria-label="Stellar Cartography, карта галактики"
+      >
+        <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
+          <path d="M20 3v34M3 20h34" />
+          <circle cx="20" cy="20" r="12" />
+          <path d="m9 9 22 22M9 31 31 9" />
+          <circle cx="20" cy="20" r="3" />
+        </svg>
+        <span>STELLAR<span class="brand-sub">CARTOGRAPHY</span></span>
+      </a>
+      <nav class="top-nav" aria-label="Главная навигация">
+        <button id="map-nav" class="nav-button active">
+          <span data-icon="galaxy"></span><span>Карта галактики</span>
+        </button>
+        <button id="journal-nav" class="nav-button">
+          <span data-icon="journal"></span><span>Журнал</span
+          ><span id="journal-count" class="count">00</span>
+        </button>
+      </nav>
+      <div class="header-actions">
+        <span class="online"><i></i> НАВИГАЦИЯ АКТИВНА</span>
+        <button
+          id="sound"
+          class="icon-button"
+          aria-label="Включить звук"
+          aria-pressed="false"
+          title="Звук"
+        >
+          <span data-icon="soundOff"></span>
+        </button>
+        <button
+          id="help-button"
+          class="icon-button"
+          aria-label="Управление"
+          title="Управление"
+        >
+          <span data-icon="help"></span>
+        </button>
+      </div>
+    </header>
+    <main class="workspace">
+      <aside class="catalog" aria-label="Каталог объектов">
+        <div class="catalog-heading">
+          <span class="eyebrow">НАВИГАЦИОННЫЙ АТЛАС</span
+          ><span class="edition">01 / MW</span>
         </div>
-
-        <div id="boot-content">
-            <div id="boot-logo">
-                <pre id="ascii-logo">
- ╔═══════════════════════════════════════════════╗
- ║   S T E L L A R   C A R T O G R A P H Y     ║
- ║          DEEP SPACE ANOMALY NETWORK           ║
- ╚═══════════════════════════════════════════════╝
-                </pre>
-            </div>
-            <div id="boot-terminal"></div>
-            <div id="boot-progress-wrap" class="boot-hidden">
-                <div id="boot-progress-bar"></div>
-                <span id="boot-progress-pct">0%</span>
-            </div>
-            <div id="boot-enter-wrap" class="boot-hidden">
-                <button id="boot-enter-btn">
-                    <i class="fas fa-satellite-dish"></i>
-                    INITIALIZE STAR CHART
-                </button>
-                <p class="boot-hint">Press ENTER or click to launch</p>
-            </div>
+        <h1>За пределами<br />знакомого.</h1>
+        <p class="catalog-intro">
+          Восемь причин отправиться<br />в глубину нашей галактики.
+        </p>
+        <label class="search"
+          ><span data-icon="search"></span
+          ><input
+            id="search"
+            type="search"
+            placeholder="Найти объект"
+            autocomplete="off"
+            aria-label="Найти объект"
+          /><kbd>/</kbd></label
+        >
+        <div id="filters" class="filters" role="group" aria-label="Тип объекта">
+          <button class="active" data-filter="all" aria-pressed="true">
+            Все</button
+          ><button data-filter="star" aria-pressed="false">Звёзды</button
+          ><button data-filter="nebula" aria-pressed="false">Туманности</button>
         </div>
-
-        <!-- Right side panels -->
-        <div id="boot-side-right" class="boot-side">
-            <div class="boot-panel">
-                <div class="bp-title">▸ SYSTEM RESOURCES</div>
-                <div class="bp-body" id="bp-sys"></div>
-            </div>
-            <div class="boot-panel">
-                <div class="bp-title">▸ NAV CALIBRATION</div>
-                <div class="bp-body" id="bp-nav"></div>
-            </div>
+        <div class="list-heading">
+          <span>ОБЪЕКТЫ</span><span id="result-count">08</span>
         </div>
-
-        <div id="boot-stats">
-            <span>SYS_BUILD: 4.7.2-rc1</span>
-            <span>KERNEL: ASTRO-NAV/x86_64</span>
-            <span id="boot-clock">00:00:00 UTC</span>
+        <div id="object-list" class="object-list"></div>
+        <p id="empty-search" class="empty-search" hidden>
+          Ничего не найдено.<br />Попробуйте название или номер M42.
+        </p>
+        <button id="tour" class="tour-button">
+          <span data-icon="route"></span
+          ><span
+            ><strong>Маршрут открытия</strong
+            ><small>5 остановок от Солнца до центра</small></span
+          ><span data-icon="arrow"></span>
+        </button>
+        <div class="catalog-footer">
+          <span class="signal-bars"><i></i><i></i><i></i><i></i></span
+          ><span>МЛЕЧНЫЙ ПУТЬ / СЕКТОР 001</span>
         </div>
+      </aside>
+      <section class="viewport" aria-label="Интерактивная космическая карта">
+        <div id="scene"></div>
+        <div class="vignette" aria-hidden="true"></div>
+        <div id="labels" class="map-labels"></div>
+        <div class="view-heading">
+          <span id="view-kicker" class="eyebrow">ДОМАШНЯЯ ГАЛАКТИКА</span>
+          <h2 id="view-title">Млечный Путь</h2>
+          <p id="view-subtitle">Наша маленькая часть бесконечности</p>
+        </div>
+        <div class="view-top-right">
+          <span class="view-tag" id="view-tag">ГАЛАКТИЧЕСКИЙ ОБЗОР</span
+          ><span class="crosshair" aria-hidden="true">+</span>
+        </div>
+        <button id="object-info" class="secondary-button">
+          Об объекте <span data-icon="help"></span>
+        </button>
+        <div class="axis-mark" aria-hidden="true">
+          <span>Z</span
+          ><svg viewBox="0 0 65 65">
+            <path d="M24 42V8m0 34 31 10M24 42 5 57" />
+            <circle cx="24" cy="42" r="3" /></svg
+          ><span>X</span>
+        </div>
+        <div class="view-tools" role="group" aria-label="Управление видом">
+          <button
+            id="zoom-in"
+            class="icon-button"
+            aria-label="Приблизить"
+            title="Приблизить"
+          >
+            <span data-icon="plus"></span>
+          </button>
+          <button
+            id="zoom-out"
+            class="icon-button"
+            aria-label="Отдалить"
+            title="Отдалить"
+          >
+            <span data-icon="minus"></span></button
+          ><span class="tool-divider"></span>
+          <button
+            id="reset-view"
+            class="icon-button"
+            aria-label="Исходный ракурс"
+            title="Исходный ракурс"
+          >
+            <span data-icon="target"></span>
+          </button>
+          <button
+            id="rotate"
+            class="icon-button"
+            aria-label="Автовращение"
+            aria-pressed="false"
+            title="Автовращение"
+          >
+            <span data-icon="rotate"></span>
+          </button>
+          <button
+            id="cinema"
+            class="icon-button"
+            aria-label="Скрыть интерфейс"
+            title="Скрыть интерфейс (H)"
+          >
+            <span data-icon="expand"></span>
+          </button>
+        </div>
+        <button id="exit-cinema" class="secondary-button" hidden>
+          Вернуть интерфейс <kbd>H</kbd>
+        </button>
+        <div class="map-legend">
+          <span><i class="legend-dot star"></i> Звезда</span
+          ><span><i class="legend-dot nebula"></i> Туманность</span
+          ><span><i class="legend-dot blackhole"></i> Чёрная дыра</span>
+        </div>
+        <div id="map-note" class="map-note">
+          Навигационная схема. Положения и масштабы условные.
+        </div>
+        <div id="orbit-note" class="orbit-note" hidden>
+          <span class="eyebrow">СВОБОДНЫЙ ОСМОТР</span
+          ><span>Вращайте модель мышью или пальцем</span>
+        </div>
+        <div id="flight" class="flight" hidden>
+          <span class="eyebrow">МЕЖЗВЁЗДНЫЙ ПЕРЕЛЁТ</span>
+          <h2 id="flight-name"></h2>
+          <div class="flight-progress"><span id="flight-progress"></span></div>
+          <div class="flight-meta">
+            <span id="flight-phase">Прокладываем курс</span
+            ><span id="flight-percent">0%</span>
+          </div>
+          <button id="skip-flight" class="secondary-button">
+            Пропустить <kbd>Enter</kbd>
+          </button>
+        </div>
+        <div id="loading" class="loading">
+          <span class="loading-orbit"></span>
+          <p>Собираем звёздную карту</p>
+        </div>
+        <div id="render-error" class="render-error" role="alert" hidden>
+          <h2>3D недоступно</h2>
+          <p id="render-error-text">
+            Для карты нужен браузер с поддержкой WebGL 2.
+          </p>
+          <button class="primary-button" id="retry">Попробовать снова</button>
+        </div>
+      </section>
+      <aside class="details" aria-label="Выбранный объект">
+        <div class="detail-top">
+          <span class="eyebrow">ЦЕЛЬ ИССЛЕДОВАНИЯ</span
+          ><span id="detail-number" class="edition">08</span>
+        </div>
+        <div id="detail-art" class="detail-art" aria-hidden="true">
+          <div class="art-body"></div>
+          <div class="art-ring"></div>
+          <div class="art-glow"></div>
+          <span class="art-corner">+</span
+          ><span class="art-code" id="art-code"></span>
+        </div>
+        <div class="detail-title">
+          <span id="detail-type" class="object-type"></span>
+          <h2 id="detail-name"></h2>
+          <p id="detail-alias"></p>
+        </div>
+        <p id="detail-description" class="description"></p>
+        <dl id="detail-facts" class="facts"></dl>
+        <div class="field-note">
+          <span class="eyebrow">СТОИТ УВИДЕТЬ</span>
+          <p id="detail-highlight"></p>
+        </div>
+        <a
+          id="source-link"
+          class="source-link"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Об объекте на NASA <span data-icon="external"></span
+        ></a>
+        <div class="detail-bottom">
+          <span id="visit-status"><i></i> Ожидает исследования</span
+          ><span>3D</span>
+        </div>
+      </aside>
+    </main>
+    <footer class="flight-deck">
+      <div class="position">
+        <span class="position-icon" data-icon="location"></span>
+        <div>
+          <span class="eyebrow" id="position-label">ТОЧКА ОТСЧЁТА</span
+          ><strong id="position-name">Солнечная система</strong>
+        </div>
+      </div>
+      <div class="course-line"><span></span><i></i><span></span></div>
+      <div class="destination">
+        <span class="eyebrow">ВЫБРАННЫЙ КУРС</span
+        ><strong id="destination-name"></strong
+        ><span id="destination-distance"></span>
+      </div>
+      <div class="deck-actions">
+        <button id="return-map" class="secondary-button" hidden>
+          <span data-icon="galaxy"></span> К карте</button
+        ><button id="launch" class="primary-button">
+          <span data-icon="launch"></span
+          ><span id="launch-label">Начать перелёт</span><kbd>Enter</kbd>
+        </button>
+      </div>
+    </footer>
+    <div class="status-bar">
+      <span>SC / EXPLORER 02</span
+      ><span id="controls-hint"
+        >ПЕРЕТАЩИТЬ - ВРАЩЕНИЕ <b>/</b> КОЛЕСО - МАСШТАБ</span
+      >
+      <div>
+        <span id="quality-label">AUTO</span
+        ><select id="quality" aria-label="Качество графики">
+          <option value="auto">Авто</option>
+          <option value="high">Высокое</option>
+          <option value="low">Экономное</option></select
+        ><span class="status-light"></span><span id="fps">-- FPS</span>
+      </div>
     </div>
-
-    <!-- ========== MAIN APP (hidden during boot) ========== -->
-    <div id="app-container" class="app-hidden">
-        <canvas id="webgl-canvas"></canvas>
-        <div id="node-labels"></div>
-
-        <div id="ui-container">
-            <header id="nav-header" class="glass-panel">
-                <div class="logo-area">
-                    <i class="fas fa-satellite-dish pulse-icon"></i>
-                    <div>
-                        <h1>STELLAR CARTOGRAPHY</h1>
-                        <span class="sub">Deep Space anomaly network</span>
-                    </div>
-                </div>
-                <nav class="navigation-controls">
-                    <button id="btn-help" class="nav-btn" title="Show guide">
-                        <i class="fas fa-question-circle"></i>
-                    </button>
-                    <button id="btn-back-to-galaxy" class="nav-btn hidden">
-                        <i class="fas fa-globe"></i> Galaxy Map
-                    </button>
-                </nav>
-                <div id="connection-status" class="hud-mono">
-                    <span class="dot green"></span> SYS_ONLINE
-                </div>
-            </header>
-
-            <aside id="info-card" class="glass-panel hidden">
-                <div class="info-header">
-                    <span class="sector-tag hud-mono" id="info-sector">SECTOR 04-A</span>
-                    <h2 id="info-title">—</h2>
-                    <p id="info-class" class="hud-mono">—</p>
-                </div>
-                <div class="info-body">
-                    <div class="stats-table">
-                        <div class="stat-row">
-                            <span class="stat-label">COORDINATES</span>
-                            <span id="info-coords" class="stat-value hud-mono">—</span>
-                        </div>
-                        <div class="stat-row">
-                            <span class="stat-label">MASS</span>
-                            <span id="info-mass" class="stat-value hud-mono">—</span>
-                        </div>
-                        <div class="stat-row">
-                            <span class="stat-label">STATUS</span>
-                            <span id="info-rad" class="stat-value hud-mono">—</span>
-                        </div>
-                    </div>
-                    <div class="description-box">
-                        <p id="info-desc">—</p>
-                    </div>
-                </div>
-                <div class="info-footer">
-                    <button id="btn-enter-orbit" class="glowing-btn">
-                        <i class="fas fa-crosshairs"></i> ENTER ORBIT
-                    </button>
-                    <button id="btn-dossier-info" class="dossier-btn">
-                        <i class="fas fa-terminal"></i> DOSSIER
-                    </button>
-                </div>
-            </aside>
-
-            <aside id="control-sidebar" class="glass-panel collapsed">
-                <header class="sidebar-header">
-                    <h1 id="active-object-name">—</h1>
-                    <p class="subtitle">PHYSICS PARAMETERS</p>
-                </header>
-                <div class="sidebar-content">
-                    <section class="control-section">
-                        <h2 class="section-title"><i class="fas fa-star"></i> Presets</h2>
-                        <div class="preset-grid" id="preset-container"></div>
-                    </section>
-                    <section class="control-section">
-                        <h2 class="section-title"><i class="fas fa-atom"></i> Physics</h2>
-                        <div class="control-group">
-                            <div class="control-label-row">
-                                <label for="slider-rs" id="label-rs">Mass (R<sub>s</sub>)</label>
-                                <span class="value-display" id="val-rs">1.00</span>
-                            </div>
-                            <input type="range" id="slider-rs" min="0.2" max="2.2" step="0.05" value="1.00">
-                        </div>
-                        <div class="control-group" id="group-distortion">
-                            <div class="control-label-row">
-                                <label for="slider-distortion">Warp Distortion</label>
-                                <span class="value-display" id="val-distortion">1.00</span>
-                            </div>
-                            <input type="range" id="slider-distortion" min="0.0" max="3.0" step="0.05" value="1.00">
-                        </div>
-                    </section>
-                    <section class="control-section" id="section-accessory">
-                        <h2 class="section-title" id="accessory-title"><i class="fas fa-circle-notch"></i> Structure</h2>
-                        <div class="control-group" id="group-outer">
-                            <div class="control-label-row">
-                                <label for="slider-outer" id="label-outer">Outer Boundary</label>
-                                <span class="value-display" id="val-outer">9.50</span>
-                            </div>
-                            <input type="range" id="slider-outer" min="4.0" max="15.0" step="0.10" value="9.50">
-                        </div>
-                        <div class="control-group">
-                            <div class="control-label-row">
-                                <label for="slider-speed" id="label-speed">Rotation</label>
-                                <span class="value-display" id="val-speed">1.60</span>
-                            </div>
-                            <input type="range" id="slider-speed" min="0.0" max="4.0" step="0.05" value="1.60">
-                        </div>
-                        <div class="control-group" id="group-doppler">
-                            <div class="control-label-row">
-                                <label for="slider-doppler" id="label-doppler">Doppler</label>
-                                <span class="value-display" id="val-doppler">1.00</span>
-                            </div>
-                            <input type="range" id="slider-doppler" min="0.0" max="2.5" step="0.05" value="1.00">
-                        </div>
-                    </section>
-                    <section class="control-section">
-                        <h2 class="section-title"><i class="fas fa-palette"></i> Radiance</h2>
-                        <div class="control-group">
-                            <label>Color Palette</label>
-                            <div class="theme-picker" id="color-theme-picker"></div>
-                        </div>
-                        <div class="control-group">
-                            <div class="control-label-row">
-                                <label for="slider-stars">Star Density</label>
-                                <span class="value-display" id="val-stars">1.00</span>
-                            </div>
-                            <input type="range" id="slider-stars" min="0.0" max="3.0" step="0.05" value="1.00">
-                        </div>
-                    </section>
-                </div>
-                <footer class="sidebar-footer">
-                    <button id="btn-camera" class="action-btn"><i class="fas fa-video"></i> Orbital Autopilot</button>
-                    <button id="btn-dossier-orbit" class="dossier-btn" style="margin-top:8px">
-                        <i class="fas fa-terminal"></i> DOSSIER
-                    </button>
-                </footer>
-            </aside>
-
-            <div id="tech-hud" class="glass-panel">
-                <div class="hud-item"><span class="hud-label">FPS:</span> <span id="hud-fps">—</span></div>
-                <div class="hud-item"><span class="hud-label">TEMP:</span> <span id="hud-temp">—</span> K</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========== GUIDE OVERLAY ========== -->
-    <div id="guide-overlay" class="guide-hidden">
-        <div id="guide-panel" class="glass-panel">
-            <h2><i class="fas fa-compass"></i> Quick Reference</h2>
-            <div class="guide-grid">
-                <div class="guide-item">
-                    <div class="guide-icon"><i class="fas fa-mouse-pointer"></i></div>
-                    <div><strong>Navigate</strong><br>Drag to orbit, scroll to zoom</div>
-                </div>
-                <div class="guide-item">
-                    <div class="guide-icon"><i class="fas fa-crosshairs"></i></div>
-                    <div><strong>Select</strong><br>Click glowing markers on the map</div>
-                </div>
-                <div class="guide-item">
-                    <div class="guide-icon"><i class="fas fa-rocket"></i></div>
-                    <div><strong>Enter Orbit</strong><br>Open info card → click ENTER ORBIT</div>
-                </div>
-                <div class="guide-item">
-                    <div class="guide-icon"><i class="fas fa-sliders-h"></i></div>
-                    <div><strong>Tune Physics</strong><br>Use sliders, presets and palettes</div>
-                </div>
-            </div>
-            <button id="guide-close" class="glowing-btn"><i class="fas fa-check"></i> GOT IT</button>
-        </div>
-    </div>
-
-    <!-- ========== DOSSIER OVERLAY ========== -->
-    <div id="dossier-overlay" class="dossier-hidden">
-        <div id="dossier-panel">
-            <div id="dossier-titlebar">
-                <span class="dossier-dot red"></span>
-                <span class="dossier-dot yellow"></span>
-                <span class="dossier-dot green"></span>
-                <span id="dossier-title">ДОСЬЕ АНОМАЛИИ — CLASSIFIED</span>
-                <button id="dossier-lang" title="Switch language">EN</button>
-                <button id="dossier-close">✕</button>
-            </div>
-            <div id="dossier-body"></div>
-            <div id="dossier-footer">
-                <span id="dossier-esc">ESC чтобы закрыть</span>
-                <span id="dossier-scroll-pct">0%</span>
-                <span>STELLAR CARTOGRAPHY v4.7.2-rc1</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== Inline shaders (avoids fetch/CORS on file:// protocol) ===== -->
-    <script type="x-shader/x-fragment" id="shader-black-hole">
-#version 300 es
-precision highp float;
-
-out vec4 fragColor;
-in vec2 vUv;
-
-uniform vec3 uCamPos;
-uniform mat4 uInvProjection;
-uniform mat4 uCamWorld;
-
-uniform float uTime;
-uniform float uRs;
-uniform float uInnerRadius;
-uniform float uOuterRadius;
-uniform float uSpinSpeed;
-uniform float uDopplerStrength;
-uniform float uNoiseScale;
-uniform float uNoiseDetail;
-uniform float uBeamingScale;
-uniform float uDistortion;
-uniform float uStarDensity;
-uniform vec3 uColorTheme1;
-uniform vec3 uColorTheme2;
-
-#define MAX_STEPS 80
-#define PI 3.14159265359
-
-const float uThickness = 0.08;
-
-float hash(vec2 p) {
-    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
-}
-
-float hash3(vec3 p) {
-    p = fract(p * vec3(443.8975, 397.2973, 491.1871));
-    p += dot(p.xyz, p.yzx + 19.19);
-    return fract(p.x * p.y * p.z);
-}
-
-float noise(vec2 p) {
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-    vec2 u = f * f * (3.0 - 2.0 * f);
-    return mix(mix(hash(i + vec2(0.0,0.0)), hash(i + vec2(1.0,0.0)), u.x),
-               mix(hash(i + vec2(0.0,1.0)), hash(i + vec2(1.0,1.0)), u.x), u.y);
-}
-
-float fbm(vec2 p) {
-    float v = 0.0;
-    float a = 0.5;
-    mat2 rot = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.5));
-    for (int i = 0; i < 4; i++) {
-        v += a * noise(p);
-        p = rot * p * 2.0 + vec2(10.0);
-        a *= 0.5;
-    }
-    return v;
-}
-
-float warpedFbm(vec2 p) {
-    vec2 q = vec2(fbm(p), fbm(p + vec2(5.2, 1.3)));
-    return fbm(p + 2.0 * q);
-}
-
-vec4 sampleDiskVolume(vec3 pos, float dist, vec3 v) {
-    float r = dist;
-    float angle = atan(pos.z, pos.x);
-    float angularVelocity = uSpinSpeed * sqrt(uRs / (r * r * r + 0.01));
-    float phiRotated = angle - uTime * angularVelocity;
-
-    vec2 uvNoise = vec2(r * uNoiseScale, phiRotated * uNoiseDetail);
-    float n = warpedFbm(uvNoise);
-    float spiral = 0.5 + 0.5 * sin(phiRotated * 3.2 + r * 2.4 - uTime * 1.35);
-    float filament = smoothstep(0.48, 0.92, warpedFbm(vec2(r * 0.95 - uTime * 0.22, phiRotated * 2.6)));
-    float flare = smoothstep(0.80, 1.0, warpedFbm(vec2(phiRotated * 4.0 + uTime * 0.72, r * 1.7 - uTime * 0.35)));
-    n = mix(n, max(n, spiral * filament), 0.48);
-
-    float verticalFade = exp(-(pos.y * pos.y) / (uThickness * uThickness * 0.6));
-    float x = (r - uInnerRadius) / (uOuterRadius - uInnerRadius);
-    float radialFade = sin(x * PI);
-    float density = n * verticalFade * radialFade * (0.52 + spiral * 0.36 + flare * 0.42);
-    if (density < 0.005) return vec4(0.0);
-
-    vec3 baseColor = mix(uColorTheme1 * 1.6, uColorTheme2, pow(x, 1.2));
-
-    vec3 diskVelocityDir = normalize(vec3(-pos.z, 0.0, pos.x));
-    float cosTheta = dot(diskVelocityDir, -v);
-    float beta = 0.42 * sqrt(uRs / r);
-    float gamma = 1.0 / sqrt(1.0 - beta * beta);
-    float dopplerFactor = 1.0 / (gamma * (1.0 - beta * cosTheta));
-
-    float beaming = pow(dopplerFactor, 2.5 + uBeamingScale) * uDopplerStrength;
-    beaming = mix(1.0, beaming, clamp(uDopplerStrength, 0.0, 1.0));
-    density *= beaming;
-
-    vec3 finalColor = baseColor;
-    if (dopplerFactor > 1.0) {
-        finalColor = mix(finalColor, vec3(0.7, 0.88, 1.35) * length(baseColor), clamp((dopplerFactor - 1.0) * 0.6, 0.0, 0.8));
-    } else {
-        finalColor = mix(finalColor, vec3(0.6, 0.04, 0.0) * length(baseColor), clamp((1.0 - dopplerFactor) * 0.7, 0.0, 0.8));
-    }
-    float redshift = sqrt(1.0 - uRs / r);
-    finalColor = mix(finalColor, vec3(0.4, 0.0, 0.0) * length(finalColor), (1.0 - redshift) * 0.7);
-    finalColor *= beaming * redshift * (0.82 + spiral * 0.28 + flare * 0.55);
-    finalColor += vec3(1.0, 0.62, 0.22) * flare * radialFade * verticalFade * 0.75;
-
-    return vec4(finalColor, density);
-}
-
-vec3 getStarfield(vec3 rd) {
-    vec3 stars = vec3(0.0);
-    for (int j = 0; j < 3; j++) {
-        vec3 p = rd * (180.0 + float(j) * 70.0);
-        vec3 ip = floor(p);
-        vec3 fp = fract(p);
-        float h = hash3(ip);
-        if (h > 1.0 - (0.008 * uStarDensity)) {
-            float dist = length(fp - vec3(0.5));
-            float size = 0.035 + 0.12 * hash(ip.xy);
-            float glow = exp(-dist / size);
-            stars += vec3(glow) * h;
-        }
-    }
-    return stars;
-}
-
-float snoise3D(vec3 p) {
-    return sin(p.x + sin(p.y)) * 0.33 + sin(p.y + sin(p.z)) * 0.33 + sin(p.z + sin(p.x)) * 0.34;
-}
-
-vec3 getNebula(vec3 rd) {
-    float n = 0.0;
-    vec3 p = rd * 2.2;
-    float a = 0.5;
-    for(int i = 0; i < 4; i++) {
-        n += a * (snoise3D(p) * 0.5 + 0.5);
-        p *= 2.0;
-        a *= 0.5;
-    }
-    vec3 colBlue = vec3(0.008, 0.025, 0.12);
-    vec3 colPurple = vec3(0.07, 0.012, 0.08);
-    vec3 colDeep = vec3(0.002, 0.001, 0.008);
-    vec3 col = mix(colDeep, colBlue, n);
-    col = mix(col, colPurple, pow(n, 1.8));
-    return col * 0.8;
-}
-
-void main() {
-    vec4 ndc = vec4(vUv * 2.0 - 1.0, 1.0, 1.0);
-    vec4 rayDirView = uInvProjection * ndc;
-    rayDirView.z = -1.0;
-    rayDirView.w = 0.0;
-    vec3 rayDirWorld = normalize((uCamWorld * rayDirView).xyz);
-    vec3 rayOrigin = uCamPos;
-
-    vec3 p = rayOrigin;
-    vec3 v = rayDirWorld;
-    float stepSize = 0.1;
-    bool hitBH = false;
-    vec4 diskColorAccum = vec4(0.0);
-    vec3 bloomAccum = vec3(0.0);
-
-    for (int i = 0; i < MAX_STEPS; i++) {
-        float r2 = dot(p, p);
-        float r = sqrt(r2);
-        if (r < uRs * 1.001) { hitBH = true; break; }
-        if (r > 42.0) break;
-        stepSize = clamp(r * 0.062, 0.011, 0.28);
-        vec3 L = cross(p, v);
-        float h2 = dot(L, L);
-        vec3 a = -1.5 * uRs * h2 * p / (r2 * r2 * r) * uDistortion;
-        v += a * stepSize;
-        v = normalize(v);
-        vec3 nextP = p + v * stepSize;
-        if (abs(p.y) < uThickness) {
-            float dist = length(p.xz);
-            if (dist >= uInnerRadius && dist <= uOuterRadius) {
-                vec4 diskSample = sampleDiskVolume(p, dist, v);
-                float alpha = diskSample.a * (1.0 - diskColorAccum.a) * stepSize * 2.8;
-                diskColorAccum.rgb += diskSample.rgb * alpha;
-                diskColorAccum.a += alpha;
-                bloomAccum += diskSample.rgb * alpha * exp(-abs(p.y) * 4.0) * 0.05;
-                if (diskColorAccum.a >= 0.98) diskColorAccum.a = 1.0;
-            }
-        }
-        p = nextP;
-    }
-
-    vec3 finalColor = vec3(0.0);
-    if (!hitBH) {
-        vec3 backgroundSky = getStarfield(v) + getNebula(v);
-        finalColor = backgroundSky * (1.0 - diskColorAccum.a) + diskColorAccum.rgb;
-    } else {
-        finalColor = diskColorAccum.rgb;
-    }
-    finalColor += bloomAccum;
-    float centerDist = length(cross(rayOrigin, rayDirWorld));
-    float ringAngle = atan(rayDirWorld.z, rayDirWorld.x);
-    float ringChaos = 0.65 + 0.35 * sin(ringAngle * 18.0 + uTime * 2.4) * sin(ringAngle * 7.0 - uTime * 1.2);
-    float horizonGlow = exp(-max(0.0, centerDist - uRs) * 2.6) * (0.10 + ringChaos * 0.08);
-    if (centerDist > uRs && !hitBH) {
-        finalColor += vec3(1.0, 0.55, 0.16) * horizonGlow * (1.0 - diskColorAccum.a);
-    }
-    finalColor = finalColor / (finalColor + vec3(1.0));
-    finalColor = pow(finalColor, vec3(1.0 / 2.2));
-    fragColor = vec4(finalColor, 1.0);
-}
-    </script>
-
-    <script type="x-shader/x-fragment" id="shader-pulsar">
-#version 300 es
-precision highp float;
-
-out vec4 fragColor;
-in vec2 vUv;
-
-uniform vec3 uCamPos;
-uniform mat4 uInvProjection;
-uniform mat4 uCamWorld;
-
-uniform float uTime;
-uniform float uRs;
-uniform float uInnerRadius;
-uniform float uOuterRadius;
-uniform float uSpinSpeed;
-uniform float uDopplerStrength;
-uniform float uNoiseScale;
-uniform float uNoiseDetail;
-uniform float uBeamingScale;
-uniform float uDistortion;
-uniform float uStarDensity;
-uniform vec3 uColorTheme1;
-uniform vec3 uColorTheme2;
-
-#define MAX_STEPS 60
-#define PI 3.14159265359
-
-float hash(vec2 p) {
-    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
-}
-
-float noise(vec2 p) {
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-    vec2 u = f * f * (3.0 - 2.0 * f);
-    return mix(mix(hash(i + vec2(0.0,0.0)), hash(i + vec2(1.0,0.0)), u.x),
-               mix(hash(i + vec2(0.0,1.0)), hash(i + vec2(1.0,1.0)), u.x), u.y);
-}
-
-float fbm(vec2 p) {
-    float v = 0.0;
-    float a = 0.5;
-    for (int i = 0; i < 3; i++) {
-        v += a * noise(p);
-        p = p * 2.1 + vec2(4.0);
-        a *= 0.5;
-    }
-    return v;
-}
-
-vec3 getStarfield(vec3 rd) {
-    vec3 stars = vec3(0.0);
-    for (int j = 0; j < 2; j++) {
-        vec3 p = rd * (180.0 + float(j) * 80.0);
-        vec3 ip = floor(p);
-        vec3 fp = fract(p);
-        float h = fract(sin(dot(ip, vec3(127.1, 311.7, 74.7))) * 43758.5453);
-        if (h > 1.0 - (0.005 * uStarDensity)) {
-            float dist = length(fp - vec3(0.5));
-            float glow = exp(-dist / 0.04);
-            stars += vec3(glow) * h;
-        }
-    }
-    return stars;
-}
-
-void main() {
-    vec4 ndc = vec4(vUv * 2.0 - 1.0, 1.0, 1.0);
-    vec4 rayDirView = uInvProjection * ndc;
-    rayDirView.z = -1.0;
-    rayDirView.w = 0.0;
-    vec3 rayDirWorld = normalize((uCamWorld * rayDirView).xyz);
-    vec3 rayOrigin = uCamPos;
-
-    vec3 p = rayOrigin;
-    vec3 v = rayDirWorld;
-
-    float rotTime = uTime * uSpinSpeed;
-    float tilt = 0.45;
-    vec3 magAxis = normalize(vec3(sin(tilt) * cos(rotTime), cos(tilt), sin(tilt) * sin(rotTime)));
-
-    float stepSize = 0.15;
-    vec3 colorAccum = vec3(0.0);
-    float alphaAccum = 0.0;
-    bool hitStar = false;
-
-    for (int i = 0; i < MAX_STEPS; i++) {
-        float r = length(p);
-        if (r > 35.0 || alphaAccum >= 0.98) break;
-
-        if (r < uRs) {
-            hitStar = true;
-            vec3 normal = p / r;
-            vec2 surfUV = vec2(atan(normal.z, normal.x) / PI, acos(normal.y) / PI);
-            surfUV.x += uTime * uSpinSpeed * 0.05;
-            float n = fbm(surfUV * uNoiseScale);
-            vec3 coreCol = vec3(0.5, 0.65, 1.0) * (1.2 + n * 0.6);
-            float align = abs(dot(normal, magAxis));
-            float hotspot = pow(align, 8.0) * 0.7;
-            coreCol += vec3(0.4, 0.6, 1.0) * hotspot;
-            float alpha = 1.0 - alphaAccum;
-            colorAccum += coreCol * alpha;
-            alphaAccum = 1.0;
-            break;
-        }
-
-        stepSize = clamp(r * 0.08, 0.04, 0.4);
-        vec3 pNorm = p / r;
-        float cosPoleAngle = dot(pNorm, magAxis);
-        float absCos = abs(cosPoleAngle);
-        float jetThreshold = 0.93 - (uBeamingScale * 0.02);
-
-        if (absCos > jetThreshold) {
-            float jetFactor = (absCos - jetThreshold) / (1.0 - jetThreshold);
-            float jetGlow = pow(jetFactor, 4.0) * uDopplerStrength * 0.9;
-            float pulse = 1.0 + 0.3 * sin(r * 1.5 - uTime * 12.0);
-            jetGlow *= pulse / (r * 0.3 + 0.5);
-            vec3 jetCol = uColorTheme1 * jetGlow;
-            float alpha = (1.0 - alphaAccum) * jetGlow * stepSize * 1.5;
-            colorAccum += jetCol * alpha;
-            alphaAccum += alpha;
-        }
-
-        float theta = acos(dot(pNorm, magAxis));
-        float dipoleLines = sin(r * 1.2 - uTime * 6.0) * sin(theta * 4.0);
-        float magneticGlow = pow(abs(dipoleLines), 8.0) * 0.15 * uNoiseDetail;
-        magneticGlow *= exp(-r * 0.12);
-        if (magneticGlow > 0.005) {
-            vec3 magCol = mix(uColorTheme2, uColorTheme1, sin(r * 0.3) * 0.5 + 0.5);
-            float alpha = (1.0 - alphaAccum) * magneticGlow * stepSize * 2.0;
-            colorAccum += magCol * alpha;
-            alphaAccum += alpha;
-        }
-
-        p += v * stepSize;
-    }
-
-    vec3 finalColor = colorAccum;
-    if (alphaAccum < 1.0) {
-        vec3 sky = getStarfield(v);
-        float skyGlow = sin(v.x * 2.0 + sin(v.y * 3.0)) * 0.5 + 0.5;
-        sky += uColorTheme2 * (skyGlow * 0.03);
-        finalColor += sky * (1.0 - alphaAccum);
-    }
-
-    float centerDist = length(cross(rayOrigin, rayDirWorld));
-    float starGlow = exp(-max(0.0, centerDist - uRs) * 2.0) * 0.2;
-    finalColor += vec3(0.6, 0.8, 1.2) * starGlow * (1.0 - alphaAccum);
-
-    finalColor = finalColor / (finalColor + vec3(0.9));
-    finalColor = pow(finalColor, vec3(1.0 / 2.2));
-    fragColor = vec4(finalColor, 1.0);
-}
-    </script>
-
-    <script type="x-shader/x-fragment" id="shader-wormhole">
-#version 300 es
-precision highp float;
-
-out vec4 fragColor;
-in vec2 vUv;
-
-uniform vec3 uCamPos;
-uniform mat4 uInvProjection;
-uniform mat4 uCamWorld;
-
-uniform float uTime;
-uniform float uRs;
-uniform float uInnerRadius;
-uniform float uOuterRadius;
-uniform float uSpinSpeed;
-uniform float uDopplerStrength;
-uniform float uNoiseScale;
-uniform float uNoiseDetail;
-uniform float uBeamingScale;
-uniform float uDistortion;
-uniform float uStarDensity;
-uniform vec3 uColorTheme1;
-uniform vec3 uColorTheme2;
-
-#define MAX_STEPS 60
-#define PI 3.14159265359
-
-float hash3(vec3 p) {
-    p = fract(p * vec3(443.8975, 397.2973, 491.1871));
-    p += dot(p.xyz, p.yzx + 19.19);
-    return fract(p.x * p.y * p.z);
-}
-
-float snoise3D(vec3 p) {
-    return sin(p.x + sin(p.y)) * 0.33 + sin(p.y + sin(p.z)) * 0.33 + sin(p.z + sin(p.x)) * 0.34;
-}
-
-vec3 getOurUniverseSky(vec3 rd) {
-    vec3 stars = vec3(0.0);
-    for (int j = 0; j < 2; j++) {
-        vec3 p = rd * (160.0 + float(j) * 90.0);
-        vec3 ip = floor(p);
-        vec3 fp = fract(p);
-        float h = hash3(ip);
-        if (h > 1.0 - (0.007 * uStarDensity)) {
-            float dist = length(fp - vec3(0.5));
-            stars += vec3(exp(-dist / 0.05)) * h;
-        }
-    }
-    float n = 0.0;
-    vec3 np = rd * 2.0;
-    float a = 0.5;
-    for(int i = 0; i < 3; i++) {
-        n += a * (snoise3D(np) * 0.5 + 0.5);
-        np *= 2.1; a *= 0.5;
-    }
-    vec3 nebula = mix(vec3(0.001, 0.002, 0.015), vec3(0.01, 0.04, 0.08), n);
-    return stars + nebula;
-}
-
-vec3 getAltUniverseSky(vec3 rd) {
-    vec3 stars = vec3(0.0);
-    for (int j = 0; j < 2; j++) {
-        vec3 p = rd * (190.0 - float(j) * 70.0);
-        vec3 ip = floor(p);
-        vec3 fp = fract(p);
-        float h = hash3(ip + vec3(100.0));
-        if (h > 1.0 - (0.009 * uStarDensity)) {
-            float dist = length(fp - vec3(0.5));
-            vec3 col = mix(vec3(0.85, 0.6, 0.3), vec3(0.45, 0.65, 1.0), h);
-            stars += col * exp(-dist / 0.045) * h;
-        }
-    }
-    float n = 0.0;
-    vec3 np = rd * (1.8 * uNoiseScale);
-    float a = 0.5;
-    for(int i = 0; i < 4; i++) {
-        n += a * (snoise3D(np) * 0.5 + 0.5);
-        np *= 2.2; a *= 0.5;
-    }
-    vec3 nebula = mix(vec3(0.002, 0.0, 0.004), uColorTheme1 * 0.12, n);
-    nebula = mix(nebula, uColorTheme2 * 0.18, pow(n, 2.0));
-    return (stars + nebula) * uDopplerStrength;
-}
-
-void main() {
-    vec4 ndc = vec4(vUv * 2.0 - 1.0, 1.0, 1.0);
-    vec4 rayDirView = uInvProjection * ndc;
-    rayDirView.z = -1.0;
-    rayDirView.w = 0.0;
-    vec3 rayDirWorld = normalize((uCamWorld * rayDirView).xyz);
-    vec3 rayOrigin = uCamPos;
-
-    vec3 p = rayOrigin;
-    vec3 v = rayDirWorld;
-    float stepSize = 0.1;
-    bool crossedThroat = false;
-
-    for (int i = 0; i < MAX_STEPS; i++) {
-        float r2 = dot(p, p);
-        float r = sqrt(r2);
-        if (r > 40.0) break;
-        stepSize = clamp(r * 0.065, 0.012, 0.3);
-        if (r < uRs) {
-            crossedThroat = !crossedThroat;
-            p = -p * 1.01;
-            r2 = dot(p, p);
-            r = sqrt(r2);
-        }
-        vec3 L = cross(p, v);
-        float h2 = dot(L, L);
-        vec3 a = -1.0 * uRs * h2 * p / (r2 * r2 * r) * uDistortion;
-        v += a * stepSize;
-        v = normalize(v);
-        p += v * stepSize;
-    }
-
-    vec3 finalColor = crossedThroat ? getAltUniverseSky(v) : getOurUniverseSky(v);
-
-    float centerDist = length(cross(rayOrigin, rayDirWorld));
-    float throatGlow = exp(-max(0.0, centerDist - uRs) * 3.5) * 0.15;
-    vec3 ringColor = mix(vec3(0.9, 0.6, 0.2), vec3(0.2, 0.7, 0.9), sin(uTime * uSpinSpeed) * 0.5 + 0.5);
-    finalColor += ringColor * throatGlow;
-
-    finalColor = finalColor / (finalColor + vec3(0.9));
-    finalColor = pow(finalColor, vec3(1.0 / 2.2));
-    fragColor = vec4(finalColor, 1.0);
-}
-    </script>
-
-    <script type="x-shader/x-fragment" id="shader-dyson">
-#version 300 es
-precision highp float;
-
-out vec4 fragColor;
-in vec2 vUv;
-
-uniform vec3 uCamPos;
-uniform mat4 uInvProjection;
-uniform mat4 uCamWorld;
-
-uniform float uTime;
-uniform float uRs;
-uniform float uInnerRadius;
-uniform float uOuterRadius;
-uniform float uSpinSpeed;
-uniform float uDopplerStrength;
-uniform float uNoiseScale;
-uniform float uNoiseDetail;
-uniform float uBeamingScale;
-uniform float uDistortion;
-uniform float uStarDensity;
-uniform vec3 uColorTheme1;
-uniform vec3 uColorTheme2;
-
-#define MAX_STEPS 60
-#define PI 3.14159265359
-
-float hash(vec2 p) {
-    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
-}
-
-float noise(vec2 p) {
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-    vec2 u = f * f * (3.0 - 2.0 * f);
-    return mix(mix(hash(i + vec2(0.0,0.0)), hash(i + vec2(1.0,0.0)), u.x),
-               mix(hash(i + vec2(0.0,1.0)), hash(i + vec2(1.0,1.0)), u.x), u.y);
-}
-
-float fbm(vec2 p) {
-    float v = 0.0;
-    float a = 0.5;
-    for (int i = 0; i < 3; i++) {
-        v += a * noise(p);
-        p = p * 2.2 + vec2(10.0);
-        a *= 0.5;
-    }
-    return v;
-}
-
-vec3 getStarfield(vec3 rd) {
-    vec3 stars = vec3(0.0);
-    for (int j = 0; j < 2; j++) {
-        vec3 p = rd * (180.0 + float(j) * 80.0);
-        vec3 ip = floor(p);
-        vec3 fp = fract(p);
-        float h = fract(sin(dot(ip, vec3(127.1, 311.7, 74.7))) * 43758.5453);
-        if (h > 1.0 - (0.007 * uStarDensity)) {
-            float dist = length(fp - vec3(0.5));
-            stars += vec3(exp(-dist / 0.04)) * h;
-        }
-    }
-    return stars;
-}
-
-bool intersectSphere(vec3 ro, vec3 rd, float r, out float t0, out float t1) {
-    float b = dot(ro, rd);
-    float c = dot(ro, ro) - r * r;
-    float h = b * b - c;
-    if (h < 0.0) return false;
-    h = sqrt(h);
-    t0 = -b - h;
-    t1 = -b + h;
-    return true;
-}
-
-void main() {
-    vec4 ndc = vec4(vUv * 2.0 - 1.0, 1.0, 1.0);
-    vec4 rayDirView = uInvProjection * ndc;
-    rayDirView.z = -1.0;
-    rayDirView.w = 0.0;
-    vec3 rayDirWorld = normalize((uCamWorld * rayDirView).xyz);
-    vec3 rayOrigin = uCamPos;
-
-    float rStar = uRs * 0.9;
-    float rShell = uRs * 2.8;
-
-    float t0_shell, t1_shell, t0_star, t1_star;
-    vec3 finalColor = vec3(0.0);
-
-    if (intersectSphere(rayOrigin, rayDirWorld, rShell, t0_shell, t1_shell) && t0_shell > 0.0) {
-        vec3 hitPos = rayOrigin + rayDirWorld * t0_shell;
-        vec3 rotPos = hitPos;
-        float angle = uTime * uSpinSpeed * 0.15;
-        float c = cos(angle), s = sin(angle);
-        rotPos.xz = mat2(c, s, -s, c) * rotPos.xz;
-
-        vec3 normPos = normalize(rotPos);
-        float theta = acos(normPos.y);
-        float phi = atan(normPos.z, normPos.x);
-
-        float freq = uNoiseDetail;
-        float gapWidth = 0.06;
-        float panelLat = step(gapWidth, fract(theta * freq / PI));
-        float panelLong = step(gapWidth, fract(phi * freq / (2.0 * PI)));
-        bool isPanel = (panelLat > 0.5) && (panelLong > 0.5);
-
-        if (isPanel) {
-            vec3 metalBase = vec3(0.03, 0.03, 0.05);
-            float circLat = step(0.95, sin(theta * freq * 8.0)) * step(0.2, fract(phi * freq * 4.0));
-            float circLong = step(0.95, sin(phi * freq * 16.0)) * step(0.2, fract(theta * freq * 2.0));
-            float circuit = clamp(circLat + circLong, 0.0, 1.0);
-            float n = fbm(vec2(theta * 5.0, phi * 10.0)) * 0.05;
-            vec3 circColor = uColorTheme1 * circuit * uDopplerStrength * 1.4;
-            finalColor = metalBase + circColor + vec3(n);
-        } else {
-            if (intersectSphere(rayOrigin, rayDirWorld, rStar, t0_star, t1_star) && t0_star > 0.0) {
-                vec3 starHitPos = rayOrigin + rayDirWorld * t0_star;
-                vec2 starUV = vec2(atan(starHitPos.z, starHitPos.x), starHitPos.y) * uNoiseScale;
-                float starNoise = fbm(starUV + vec2(uTime * 0.8));
-                finalColor = uColorTheme2 * (1.4 + starNoise * 0.8);
-            } else {
-                vec3 backHitPos = rayOrigin + rayDirWorld * t1_shell;
-                vec3 backRotPos = backHitPos;
-                backRotPos.xz = mat2(c, s, -s, c) * backRotPos.xz;
-                vec3 backNormPos = normalize(backRotPos);
-                float bTheta = acos(backNormPos.y);
-                float bPhi = atan(backNormPos.z, backNormPos.x);
-                bool isBackPanel = (step(gapWidth, fract(bTheta * freq / PI)) > 0.5) &&
-                                   (step(gapWidth, fract(bPhi * freq / (2.0 * PI))) > 0.5);
-                finalColor = isBackPanel ? vec3(0.02, 0.02, 0.03) : getStarfield(rayDirWorld);
-            }
-            float centerDist = length(cross(rayOrigin, rayDirWorld));
-            float coronaGlow = exp(-max(0.0, centerDist - rStar) * 1.5) * 0.28;
-            finalColor += uColorTheme2 * coronaGlow;
-        }
-    } else {
-        finalColor = getStarfield(rayDirWorld);
-        float centerDist = length(cross(rayOrigin, rayDirWorld));
-        float outerGlow = exp(-max(0.0, centerDist - rShell) * 1.8) * 0.15;
-        finalColor += uColorTheme2 * outerGlow;
-    }
-
-    finalColor = finalColor / (finalColor + vec3(0.9));
-    finalColor = pow(finalColor, vec3(1.0 / 2.2));
-    fragColor = vec4(finalColor, 1.0);
-}
-    </script>
-
-    <script type="x-shader/x-fragment" id="shader-nebula">
-#version 300 es
-precision highp float;
-
-out vec4 fragColor;
-in vec2 vUv;
-
-uniform vec3 uCamPos;
-uniform mat4 uInvProjection;
-uniform mat4 uCamWorld;
-
-uniform float uTime;
-uniform float uRs;
-uniform float uInnerRadius;
-uniform float uOuterRadius;
-uniform float uSpinSpeed;
-uniform float uDopplerStrength;
-uniform float uNoiseScale;
-uniform float uNoiseDetail;
-uniform float uBeamingScale;
-uniform float uDistortion;
-uniform float uStarDensity;
-uniform vec3 uColorTheme1;
-uniform vec3 uColorTheme2;
-uniform int  uShapeMode;        // 0=orion, 1=horsehead, 2=crab, 3=pleiades
-
-#define MAX_STEPS 60
-#define PI 3.14159265359
-
-float hash3(vec3 p) {
-    p = fract(p * 0.3183099 + 0.1);
-    p *= 17.0;
-    return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
-}
-
-float noise3(vec3 x) {
-    vec3 p = floor(x);
-    vec3 f = fract(x);
-    f = f * f * (3.0 - 2.0 * f);
-    return mix(mix(mix(hash3(p + vec3(0,0,0)), hash3(p + vec3(1,0,0)), f.x),
-                   mix(hash3(p + vec3(0,1,0)), hash3(p + vec3(1,1,0)), f.x), f.y),
-               mix(mix(hash3(p + vec3(0,0,1)), hash3(p + vec3(1,0,1)), f.x),
-                   mix(hash3(p + vec3(0,1,1)), hash3(p + vec3(1,1,1)), f.x), f.y), f.z);
-}
-
-float fbm3(vec3 p) {
-    float v = 0.0, a = 0.5;
-    for (int i = 0; i < 5; i++) {
-        v += a * noise3(p);
-        p = p * 2.1 + vec3(3.7);
-        a *= 0.5;
-    }
-    return v;
-}
-
-mat3 rotY(float a) {
-    float c = cos(a), s = sin(a);
-    return mat3(c, 0.0, -s, 0.0, 1.0, 0.0, s, 0.0, c);
-}
-
-vec3 getStarfield(vec3 rd) {
-    vec3 stars = vec3(0.0);
-    for (int j = 0; j < 2; j++) {
-        vec3 p = rd * (200.0 + float(j) * 90.0);
-        vec3 ip = floor(p);
-        vec3 fp = fract(p);
-        float h = fract(sin(dot(ip, vec3(127.1, 311.7, 74.7))) * 43758.5453);
-        if (h > 1.0 - (0.004 * uStarDensity)) {
-            float d = length(fp - vec3(0.5));
-            stars += vec3(exp(-d / 0.06)) * h * 0.9;
-        }
-    }
-    return stars;
-}
-
-float densOrion(vec3 p, float outerR, float coreR) {
-    vec3 c1 = vec3(-0.8, 0.4, 0.0);
-    float d1 = length(p - c1);
-    float lobe = exp(-pow(d1 / (coreR * 1.4), 1.8));
-
-    vec3 wp = p - vec3(0.6, -0.2, 0.0);
-    wp.x *= 0.5;
-    wp.y *= 1.1;
-    float wing = exp(-pow(length(wp) / (outerR * 0.45), 2.0)) * 0.75;
-
-    vec3 hole = p - vec3(-1.1, 0.6, 0.3);
-    float hollow = exp(-dot(hole, hole) * 1.6);
-
-    float shape = max(lobe + wing - hollow * 0.45, 0.0);
-
-    float drift = uTime * uSpinSpeed * 0.015;
-    float base = fbm3(p * uNoiseScale * 0.45 + vec3(drift, drift * 0.6, -drift * 0.7));
-    float wisp = fbm3(p * uNoiseScale * 1.4 - vec3(drift * 1.3, 0.0, drift));
-
-    float dens = smoothstep(0.32, 0.85, base) * shape;
-    dens += smoothstep(0.55, 0.9, wisp) * shape * (uNoiseDetail * 0.12);
-    return dens;
-}
-
-vec2 densHorsehead(vec3 p, float outerR, float coreR) {
-    // Wide IC 434 emission background — spans the full field
-    // Bright pink H-alpha wall on the +y half, fading down
-    float bgY = smoothstep(-outerR * 0.8, outerR * 0.6, p.y) * 0.8 + 0.2;
-    float bgZ = smoothstep(outerR * 0.3, -outerR * 0.5, p.z);
-    float bgRad = exp(-(p.x * p.x) / (outerR * outerR * 1.2));
-    float drift = uTime * uSpinSpeed * 0.013;
-    float bgFbm = fbm3(p * uNoiseScale * 0.4 + vec3(drift, drift * 0.4, -drift * 0.3));
-    float bgWisp = fbm3(p * uNoiseScale * 0.9 - vec3(drift * 0.7, 0.0, drift * 0.5));
-    float bgEmit = bgY * bgZ * bgRad * (smoothstep(0.15, 0.75, bgFbm) * 0.9 + smoothstep(0.4, 0.85, bgWisp) * 0.4);
-
-    // Horse-head dark silhouette — positioned against the glow
-    vec3 hp = p - vec3(0.0, -0.15, 0.25);
-
-    // Neck — tall vertical column
-    vec3 body = hp;
-    body.x *= 1.5;
-    body.z *= 1.6;
-    float bodyD = length(body) - coreR * 1.6;
-
-    // Head bulge — offset upward and slightly left
-    vec3 head = hp - vec3(-0.15, coreR * 1.8, 0.0);
-    head.x *= 1.15;
-    head.z *= 1.3;
-    float headD = length(head) - coreR * 1.1;
-
-    // Pointed ear — distinctive peak at top-left
-    vec3 ear = hp - vec3(-0.5, coreR * 2.7, 0.0);
-    ear.y *= 0.55;
-    ear.x *= 0.85;
-    float earD = length(ear) - coreR * 0.5;
-
-    // Snout — protruding to the right
-    vec3 snout = hp - vec3(coreR * 1.4, coreR * 0.6, 0.0);
-    snout.y *= 1.6;
-    snout.x *= 0.8;
-    float snoutD = length(snout) - coreR * 0.75;
-
-    // Base cloud — wide dark cloud below the horse
-    vec3 baseCloud = hp - vec3(0.0, -coreR * 1.0, 0.0);
-    baseCloud.y *= 0.5;
-    baseCloud.x *= 0.6;
-    float baseD = length(baseCloud) - coreR * 2.5;
-
-    // Smooth union of all parts
-    float k = 0.5;
-    float dShape = -log(exp(-bodyD/k) + exp(-headD/k) + exp(-earD/k) + exp(-snoutD/k) + exp(-baseD/k)) * k;
-
-    // Strong absorption inside silhouette
-    float inside = smoothstep(0.1, -0.6, dShape);
-
-    // Turbulent dust texture
-    float dustN = fbm3(p * uNoiseScale * 0.85 - vec3(drift * 0.8, drift * 0.3, drift * 0.5));
-    float dustDetail = fbm3(p * uNoiseScale * 1.8 + vec3(drift * 1.2));
-    float dust = inside * (smoothstep(0.18, 0.65, dustN) * 2.2 + smoothstep(0.5, 0.9, dustDetail) * 1.0);
-
-    // Rim glow — bright edge where silhouette meets emission
-    float rim = smoothstep(-0.6, -0.05, dShape) * smoothstep(0.15, -0.15, dShape);
-    bgEmit += rim * 0.6 * bgZ;
-
-    return vec2(bgEmit, dust);
-}
-
-float densCrab(vec3 p, float outerR, float coreR) {
-    vec3 e = p;
-    e.x *= 0.78;
-    e.y *= 1.1;
-    float r = length(e);
-
-    float ang = atan(p.z, p.x);
-    float filAng = sin(ang * 6.0 + uTime * uSpinSpeed * 0.18) * 0.5 + 0.5;
-    filAng = pow(filAng, 1.4);
-
-    float radN = fbm3(vec3(ang * 3.0, r * 1.4, p.y * 1.3) + vec3(uTime * uSpinSpeed * 0.05));
-
-    float outerEdge = smoothstep(outerR * 1.05, coreR * 0.9, r);
-    float innerCut = smoothstep(coreR * 0.4, coreR * 1.1, r);
-    float shellMask = outerEdge * innerCut;
-
-    float filaments = shellMask * (0.35 + 0.65 * filAng) * smoothstep(0.28, 0.78, radN);
-
-    float pulse = 0.78 + 0.22 * sin(uTime * 1.5);
-    float core = exp(-r * r / (coreR * coreR * 0.45)) * pulse;
-
-    return filaments * 1.4 + core * 0.85;
-}
-
-vec3 plPos(int i) {
-    if (i == 0) return vec3( 0.0,  0.0,  0.0);
-    if (i == 1) return vec3(-2.4,  0.8, -0.6);
-    if (i == 2) return vec3( 2.7, -0.4,  0.7);
-    if (i == 3) return vec3(-1.6, -1.5,  1.0);
-    if (i == 4) return vec3( 1.4,  1.9, -1.1);
-    if (i == 5) return vec3(-3.1, -0.3,  1.4);
-    if (i == 6) return vec3( 3.2,  1.1, -0.8);
-    return vec3(0.0);
-}
-
-float plMag(int i) {
-    if (i == 0) return 1.40;
-    if (i == 1) return 1.00;
-    if (i == 2) return 1.10;
-    if (i == 3) return 0.85;
-    if (i == 4) return 0.90;
-    if (i == 5) return 0.95;
-    if (i == 6) return 0.75;
-    return 0.5;
-}
-
-vec3 sampPleiades(vec3 p) {
-    vec3 col = vec3(0.0);
-    float drift = uTime * uSpinSpeed * 0.018;
-
-    for (int i = 0; i < 7; i++) {
-        vec3 sp = plPos(i);
-        vec3 rel = p - sp;
-        float d = length(rel);
-        if (d > 1.8) continue;
-        float mag = plMag(i);
-        float tw = 0.82 + 0.18 * sin(uTime * (0.6 + float(i) * 0.27) + float(i) * 1.7);
-
-        float starGlow = exp(-d * d * 10.0) * mag * uBeamingScale * tw;
-
-        float nebN = fbm3(rel * uNoiseScale * 1.6 + vec3(drift + float(i) * 5.0));
-        float neb = exp(-d * 2.0) * mag * 0.6 * smoothstep(0.4, 0.82, nebN);
-
-        vec3 starCol = mix(uColorTheme2, vec3(1.2, 1.2, 1.35), 0.65);
-        vec3 nebCol  = mix(uColorTheme1, uColorTheme2, 0.7);
-        col += starCol * starGlow + nebCol * neb;
-    }
-    return col;
-}
-
-void main() {
-    vec4 ndc = vec4(vUv * 2.0 - 1.0, 1.0, 1.0);
-    vec4 rdView = uInvProjection * ndc;
-    rdView.z = -1.0;
-    rdView.w = 0.0;
-    vec3 rd = normalize((uCamWorld * rdView).xyz);
-    vec3 ro = uCamPos;
-
-    float coreR = max(uRs * 2.0, 1.0);
-    float outerR = max(uOuterRadius, coreR + 0.5);
-
-    float boundR = outerR * 1.3;
-    float b = dot(ro, rd);
-    float c = dot(ro, ro) - boundR * boundR;
-    float disc = b * b - c;
-
-    vec3 accumCol = vec3(0.0);
-    float accumA = 0.0;
-
-    if (disc > 0.0) {
-        float sq = sqrt(disc);
-        float tNear = max(-b - sq, 0.0);
-        float tFar = -b + sq;
-        float span = max(tFar - tNear, 0.01);
-        float stepLen = span / float(MAX_STEPS);
-        float t = tNear + stepLen * 0.5;
-
-        mat3 rot = rotY(uTime * uSpinSpeed * 0.007);
-
-        for (int i = 0; i < MAX_STEPS; i++) {
-            if (accumA > 0.97) break;
-            vec3 pw = ro + rd * t;
-            vec3 p = rot * pw;
-
-            if (uShapeMode == 3) {
-                vec3 cc = sampPleiades(p);
-                float lum = dot(cc, vec3(0.3, 0.59, 0.11));
-                if (lum > 0.015) {
-                    float a = clamp(lum * stepLen * 1.1, 0.0, 1.0) * (1.0 - accumA);
-                    accumCol += cc * a;
-                    accumA += a;
-                }
-            }
-            else if (uShapeMode == 1) {
-                vec2 d = densHorsehead(p, outerR, coreR);
-                // Emission background (IC 434 H-alpha glow)
-                if (d.x > 0.003) {
-                    // Pink-magenta gradient: brighter at top, deeper at edges
-                    float yFade = smoothstep(-outerR * 0.5, outerR * 0.5, p.y);
-                    vec3 emitCol = mix(uColorTheme1 * 0.7, uColorTheme1, yFade);
-                    emitCol = mix(emitCol, uColorTheme2, 0.15);
-                    float a = d.x * uDopplerStrength * 0.45 * stepLen * (1.0 - accumA);
-                    accumCol += emitCol * a;
-                    accumA += a;
-                }
-                // Dark dust absorption (horse silhouette)
-                if (d.y > 0.01) {
-                    float k = d.y * stepLen * 2.4;
-                    // Strong extinction — eats the pink glow behind
-                    accumCol *= exp(-k * 2.2);
-                    // Very faint self-emission from warm dust
-                    vec3 dustCol = vec3(0.03, 0.015, 0.025);
-                    float a = k * 0.08 * (1.0 - accumA);
-                    accumCol += dustCol * a;
-                    accumA += k * 0.5 * (1.0 - accumA);
-                }
-            }
-            else if (uShapeMode == 2) {
-                float dens = densCrab(p, outerR, coreR);
-                if (dens > 0.01) {
-                    float r = length(p);
-                    float ang = atan(p.z, p.x);
-                    float mt = clamp(r / outerR + sin(ang * 6.0) * 0.12, 0.0, 1.0);
-                    vec3 col = mix(uColorTheme1, uColorTheme2, mt);
-                    if (r < coreR * 0.6) {
-                        col = mix(col, vec3(0.9, 0.85, 1.1), 0.45);
-                    }
-                    float bright = dens * uDopplerStrength * 0.35;
-                    float a = bright * stepLen * 0.95 * (1.0 - accumA);
-                    accumCol += col * a;
-                    accumA += a;
-                }
-            }
-            else {
-                float dens = densOrion(p, outerR, coreR);
-                if (dens > 0.01) {
-                    float r = length(p - vec3(-0.8, 0.4, 0.0));
-                    float mt = clamp(r / outerR * 0.95, 0.0, 1.0);
-                    vec3 col = mix(uColorTheme1, uColorTheme2, mt);
-                    float bright = dens * uDopplerStrength * 0.4;
-                    float a = bright * stepLen * 0.9 * (1.0 - accumA);
-                    accumCol += col * a;
-                    accumA += a;
-                }
-            }
-
-            t += stepLen;
-        }
-    }
-
-    vec3 sky = getStarfield(rd);
-    vec3 finalCol = accumCol + sky * (1.0 - accumA);
-
-    if (uShapeMode != 3) {
-        float centerD = length(cross(ro, rd));
-        float halo = exp(-centerD * 0.35) * 0.05 * uDopplerStrength;
-        finalCol += uColorTheme1 * halo * (1.0 - accumA);
-    }
-
-    finalCol = finalCol / (finalCol + vec3(1.1));
-    finalCol = pow(finalCol, vec3(1.0 / 2.2));
-
-    fragColor = vec4(finalCol, 1.0);
-}
-    </script>
-
-    <script src="nebula_particles.js?v=17"></script>
-    <script src="app.js?v=30"></script>
-</body>
+    <dialog id="help-dialog" aria-labelledby="help-title">
+      <div class="dialog-header">
+        <span class="eyebrow">БОРТОВАЯ СПРАВКА</span
+        ><button class="icon-button" data-close-dialog aria-label="Закрыть">
+          <span data-icon="close"></span>
+        </button>
+      </div>
+      <h2 id="help-title">Ваша галактика.<br />Ваш курс.</h2>
+      <p>
+        Выберите объект на карте или в каталоге. Начните перелёт, затем
+        рассмотрите его со всех сторон.
+      </p>
+      <dl class="help-keys">
+        <dt>Мышь / один палец</dt>
+        <dd>Вращение</dd>
+        <dt>Колесо / два пальца</dt>
+        <dd>Масштаб</dd>
+        <dt>Enter</dt>
+        <dd>Перелёт / пропустить</dd>
+        <dt>Esc</dt>
+        <dd>Вернуться к карте</dd>
+        <dt>H</dt>
+        <dd>Скрыть интерфейс</dd>
+        <dt>/</dt>
+        <dd>Поиск объектов</dd>
+      </dl>
+      <p class="science-note">
+        Это художественный атлас реальных объектов. Расстояния в карточках
+        ориентировочные, расположение на карте условное. 3D-модели передают
+        характер объектов и не являются точной реконструкцией. Перелёты и
+        движение ускорены.
+      </p>
+      <button class="primary-button" data-close-dialog>
+        Продолжить исследование
+      </button>
+    </dialog>
+    <dialog id="journal-dialog" aria-labelledby="journal-title">
+      <div class="dialog-header">
+        <span class="eyebrow">ЛИЧНЫЙ БОРТОВОЙ ЖУРНАЛ</span
+        ><button class="icon-button" data-close-dialog aria-label="Закрыть">
+          <span data-icon="close"></span>
+        </button>
+      </div>
+      <h2 id="journal-title">Там, где вы были.</h2>
+      <p id="journal-summary"></p>
+      <div id="journal-list"></div>
+      <p class="science-note">История сохраняется в этом браузере.</p>
+    </dialog>
+    <dialog id="object-dialog" aria-labelledby="object-dialog-title">
+      <div class="dialog-header">
+        <span class="eyebrow">ЦЕЛЬ ИССЛЕДОВАНИЯ</span
+        ><button class="icon-button" data-close-dialog aria-label="Закрыть">
+          <span data-icon="close"></span>
+        </button>
+      </div>
+      <div id="object-dialog-content"></div>
+    </dialog>
+    <div id="toast" role="status" aria-live="polite"></div>
+    <noscript
+      ><div class="noscript">
+        Для интерактивной карты включите JavaScript в браузере.
+      </div></noscript
+    >
+    <script type="module" src="./app.js"></script>
+  </body>
 </html>

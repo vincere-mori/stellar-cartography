@@ -1,0 +1,29 @@
+{
+  "name": "stellar-cartography",
+  "version": "2.0.0",
+  "description": "A cinematic 3D atlas of the Milky Way",
+  "main": "app.js",
+  "scripts": {
+    "start": "python -m http.server 7821 --bind 127.0.0.1",
+    "test": "node --test",
+    "vendor": "node scripts/vendor.mjs",
+    "check": "node scripts/check.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vincere-mori/stellar-cartography.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "UNLICENSED",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/vincere-mori/stellar-cartography/issues"
+  },
+  "homepage": "https://github.com/vincere-mori/stellar-cartography#readme",
+  "dependencies": {
+    "@fontsource-variable/golos-text": "5.3.0",
+    "@fontsource-variable/oswald": "5.3.0",
+    "three": "0.186.0"
+  }
+}
