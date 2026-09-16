@@ -4,7 +4,9 @@
 
 A browser-based space atlas with a navigation-console feel. Pick a destination on the Milky Way map, travel to it, then explore its 3D model.
 
-Eight destinations: the Sun, Saturn, Proxima Centauri, the Pleiades, the Orion, Eagle and Crab nebulae, and Sagittarius A\*. Stars have procedural surfaces and coronas; Saturn has rings and a Cassini Division; nebulae use volumetric particle clouds. The black hole shader approximates light bending around an accretion disk.
+Eight destinations: the Sun, Saturn, Proxima Centauri, the Pleiades, the Orion, Eagle and Crab nebulae, and Sagittarius A\*. Stars have granular surfaces, spots, coronas and animated plasma loops. Saturn has rings, a Cassini Division and ring shadows. Nebulae use ray-marched gas volumes with dust absorption. The black hole shader approximates light bending around an accretion disk.
+
+A short terminal intro with a radar opens the atlas after about three seconds, once the map is ready. Enter, Escape or the skip button removes the delay. Reduced motion skips the sequence automatically.
 
 A five-stop discovery route introduces the atlas. Search by Russian name, English alias or Messier number, orbit and zoom, hide the interface, and revisit discoveries through the local journal. Sound is optional and off by default. The interface is in Russian.
 

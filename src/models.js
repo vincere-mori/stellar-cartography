@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { makeCloud } from "./nebula.js";
 
 export function randomGenerator(seed = 42) {
   return () => {
@@ -210,9 +211,9 @@ function makeStar(red = false) {
     fragmentShader: `${noiseGLSL}
       uniform float uTime;uniform float uRed;varying vec3 vPosition;varying vec3 vNormal;varying vec3 vView;
       void main(){vec3 p=normalize(vPosition);float t=uTime*.022;
-        float granules=fbm(p*29.+vec3(t,-t,t));float turbulence=fbm(p*7.+t*.3);
-        float spots=smoothstep(.64,.79,fbm(p*5.+2.));
-        float bright=clamp(granules*1.6+turbulence*.45-spots*.8,0.,1.);
+        float granules=pow(noise(p*115.+fbm(p*25.)*2.+vec3(t,-t,t)),.65);float turbulence=fbm(p*11.+t*.3);
+        float spots=smoothstep(.66,.77,fbm(p*7.+2.));
+        float bright=clamp(granules*.95+turbulence*.5-spots*1.2,0.,1.);
         vec3 cool=mix(vec3(.74,.19,.025),vec3(.48,.065,.018),uRed);
         vec3 hot=mix(vec3(1.35,1.05,.55),vec3(1.15,.47,.18),uRed);
         vec3 col=mix(cool,hot,bright);float limb=pow(max(dot(normalize(vNormal),normalize(vView)),0.),.32);
@@ -226,14 +227,27 @@ function makeStar(red = false) {
   group.add(sphere);
   const corona = glow(red ? "#da5434" : "#efac52", 12, 0.65);
   group.add(corona);
+  group.add(
+    new THREE.Mesh(
+      new THREE.SphereGeometry(2.56, 64, 48),
+      new THREE.ShaderMaterial({
+        uniforms: { uTime: { value: 0 }, uRed: { value: red ? 1 : 0 } },
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        vertexShader: `varying vec3 vNormal,vView,vPosition;void main(){vNormal=normalize(normalMatrix*normal);vPosition=position;vec4 mv=modelViewMatrix*vec4(position,1.);vView=-mv.xyz;gl_Position=projectionMatrix*mv;}`,
+        fragmentShader: `${noiseGLSL} varying vec3 vNormal,vView,vPosition;uniform float uTime,uRed;void main(){float rim=pow(1.-max(dot(normalize(vNormal),normalize(vView)),0.),3.);float plasma=fbm(vPosition*17.+uTime*.06);gl_FragColor=vec4(mix(vec3(1.,.48,.08),vec3(1.,.15,.03),uRed),rim*(.2+plasma*.7));}`,
+      }),
+    ),
+  );
   const random = randomGenerator(55);
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 18; i++) {
     const a = random() * Math.PI * 2;
     const curve = new THREE.CatmullRomCurve3(
       Array.from({ length: 33 }, (_, j) => {
         const t = j / 32,
-          angle = a + t * 0.2;
-        const r = 2.43 + Math.sin(t * Math.PI) * (0.25 + i * 0.045);
+          angle = a + t * (0.16 + (i % 4) * 0.08);
+        const r = 2.43 + Math.sin(t * Math.PI) * (0.2 + (i % 5) * 0.13);
         return new THREE.Vector3(
           Math.cos(angle) * r,
           Math.sin(angle) * r,
@@ -243,14 +257,24 @@ function makeStar(red = false) {
     );
     group.add(
       new THREE.Mesh(
-        new THREE.TubeGeometry(curve, 32, 0.011, 4, false),
-        new THREE.MeshBasicMaterial({
-          color: red ? "#ee713d" : "#ffc381",
+        new THREE.TubeGeometry(curve, 48, 0.025, 6, false),
+        new THREE.ShaderMaterial({
+          uniforms: {
+            uTime: { value: 0 },
+            uOffset: { value: i },
+            uRed: { value: red ? 1 : 0 },
+          },
           transparent: true,
-          opacity: 0.55,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+          vertexShader: `varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+          fragmentShader: `varying vec2 vUv;uniform float uTime,uOffset,uRed;void main(){float flow=.5+.5*sin(vUv.x*30.-uTime*1.8+uOffset);float edge=pow(sin(vUv.y*3.14159),2.);gl_FragColor=vec4(mix(vec3(1.,.55,.13),vec3(1.,.2,.05),uRed),(.35+flow*.65)*edge);}`,
         }),
       ),
     );
+    const loop = group.children[group.children.length - 1];
+    loop.rotation.y = (random() - 0.5) * 2.4;
+    loop.rotation.x = (random() - 0.5) * 1.2;
   }
   return group;
 }
@@ -264,11 +288,15 @@ function makeSaturn() {
       void main(){vPosition=position;vNormal=normal;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
     fragmentShader: `${noiseGLSL}
       varying vec3 vPosition;varying vec3 vNormal;uniform float uTime;
-      void main(){vec3 p=normalize(vPosition);float bands=sin(p.y*58.+fbm(p*5.)*4.);
+      void main(){vec3 p=normalize(vPosition);float bands=sin(p.y*85.+fbm(p*vec3(8.,2.,8.))*5.);
         float fine=fbm(p*38.+vec3(uTime*.01,0.,0.));float lat=sin(p.y*17.+1.2);
         vec3 col=mix(vec3(.41,.34,.24),vec3(.79,.71,.55),.5+.09*bands+.16*lat+.12*fine);
         float light=max(dot(normalize(vNormal),normalize(vec3(-3.,4.,5.))),0.);
-        gl_FragColor=vec4(col*(.10+light*.95),1.);}`,
+        vec3 ray=normalize(vec3(-3.,4.,5.));float t=-vPosition.y/ray.y;
+        float ringR=length((vPosition+ray*t).xz);
+        float shadow=step(0.,t)*smoothstep(2.45,2.6,ringR)*(1.-smoothstep(4.5,4.65,ringR));
+        shadow*=smoothstep(.025,.065,abs(ringR-3.82));
+        gl_FragColor=vec4(col*(.12+light*.98)*(1.-shadow*.67),1.);}`,
   });
   const planet = new THREE.Mesh(new THREE.SphereGeometry(2, 96, 64), surface);
   planet.scale.y = 0.9;
@@ -298,15 +326,10 @@ function makeNebula(type) {
   const seed = { orion: 31, crab: 152, eagle: 852, pleiades: 451 }[type];
   const random = randomGenerator(seed);
   const group = new THREE.Group();
-  const positions = [],
-    colors = [],
-    sizes = [];
+  group.add(makeCloud(type));
   const starPositions = [],
     starColors = [],
     starSizes = [];
-  const blue = new THREE.Color("#6d91b2"),
-    pink = new THREE.Color("#b27d94"),
-    gold = new THREE.Color("#bb9068");
   const centers = [
     [-3, 1.2, 1],
     [1.6, 2, -0.4],
@@ -316,98 +339,6 @@ function makeNebula(type) {
     [2, -2.5, 0],
     [0, 3.1, 0],
   ];
-  const count = type === "pleiades" ? 8000 : 23000;
-  for (let i = 0; i < count; i++) {
-    const a = random() * Math.PI * 2,
-      b = Math.acos(random() * 2 - 1);
-    const r = Math.pow(random(), 0.48) * 6.2;
-    let x, y, z, c, size;
-    if (type === "pleiades") {
-      const center = centers[i % centers.length];
-      const radius = Math.pow(random(), 0.4) * 2.4;
-      x = center[0] + Math.cos(a) * radius;
-      y = center[1] + Math.sin(a) * radius * 0.6;
-      z = center[2] + (random() - 0.5) * radius;
-      c = blue.clone().lerp(new THREE.Color("#b3cbef"), random() * 0.35);
-      size = 0.5 + random() * 1.3;
-    } else if (type === "eagle") {
-      const pillar = i % 3,
-        h = random();
-      const width = 0.38 + (1 - h) * 0.95 + Math.sin(h * 24 + pillar) * 0.18;
-      x =
-        (pillar - 1) * 2.7 +
-        Math.cos(a) * width +
-        Math.sin(h * 5 + pillar) * 0.45;
-      y = -5 + h * (pillar === 1 ? 10.5 : pillar === 0 ? 8.2 : 6.7);
-      z = Math.sin(a) * width + Math.sin(h * 8) * 0.5;
-      c = gold
-        .clone()
-        .lerp(blue, Math.max(0, Math.cos(a)) * 0.9)
-        .multiplyScalar(0.45 + Math.pow(h, 3) * 0.32);
-      size = 0.3 + random() * 0.75;
-    } else if (type === "crab") {
-      const filament = Math.sin(a * 13 + b * 7) * Math.cos(b * 18 + a * 4);
-      const shell = 4.2 + filament * 0.7 + (random() - 0.5) * 0.8;
-      const radius = i % 4 === 0 ? r * 0.72 : shell;
-      x = Math.cos(a) * Math.sin(b) * radius;
-      y = Math.cos(b) * radius * 1.22;
-      z = Math.sin(a) * Math.sin(b) * radius * 0.76;
-      c =
-        i % 4 === 0
-          ? blue.clone().multiplyScalar(0.15)
-          : gold.clone().lerp(pink, (filament + 1) * 0.3);
-      size = i % 4 === 0 ? 1.4 : 0.15 + random() * 0.35;
-    } else {
-      x = Math.cos(a) * Math.sin(b) * r * 1.3;
-      y = Math.cos(b) * r * 0.65;
-      z = Math.sin(a) * Math.sin(b) * r * 0.62;
-      const folds =
-        Math.sin(x * 1.3 + Math.sin(y * 1.4)) +
-        Math.sin(y * 1.7 + z * 0.7) +
-        Math.cos(z * 1.5 + x * 0.4);
-      if (folds < -0.5 || (x * x + (y + 1.2) ** 2 < 2.3 && z > -0.7)) continue;
-      c = blue
-        .clone()
-        .lerp(pink, Math.min(1, r / 5))
-        .multiplyScalar(0.5 + random() * 0.6);
-      size = 0.5 + random() * 1.2;
-    }
-    positions.push(x, y, z);
-    colors.push(c.r, c.g, c.b);
-    sizes.push(size);
-  }
-  group.add(
-    particles(
-      positions,
-      colors,
-      sizes,
-      type === "pleiades"
-        ? 0.055
-        : type === "crab"
-          ? 0.28
-          : type === "eagle"
-            ? 0.07
-            : 0.14,
-      true,
-    ),
-  );
-  if (type === "eagle") {
-    const mistPos = [],
-      mistCol = [],
-      mistSize = [];
-    for (let i = 0; i < 4000; i++) {
-      const a = random() * Math.PI * 2,
-        r = Math.sqrt(random()) * 8;
-      mistPos.push(
-        Math.cos(a) * r,
-        Math.sin(a) * r * 0.7 - 1,
-        -3 - random() * 2,
-      );
-      mistCol.push(0.12, 0.22, 0.23);
-      mistSize.push(1 + random() * 2);
-    }
-    group.add(particles(mistPos, mistCol, mistSize, 0.055, true));
-  }
   if (type === "crab") {
     const threads = [],
       threadColors = [],
@@ -506,7 +437,7 @@ export const blackHoleFragment = `
         if(diskR>2.2&&diskR<8.5){
           float a=atan(crossP.z,crossP.x);float spin=uTime*.18/sqrt(diskR);
           float grain=fbm(vec3(diskR*3.,sin(a-spin)*9.,cos(a-spin)*9.));
-          float rings=.8+.2*sin(diskR*31.+grain*6.);float fade=smoothstep(2.2,2.65,diskR)*(1.-smoothstep(6.,8.5,diskR));
+          float rings=.55+.45*fbm(vec3(diskR*11.,sin(a-spin+diskR*.6)*3.,cos(a-spin+diskR*.6)*3.));float fade=smoothstep(2.2,2.65,diskR)*(1.-smoothstep(6.,8.5,diskR));
           float intensity=(.25+grain*1.2)*rings*fade;float beaming=1.+dot(normalize(vec3(-crossP.z,0.,crossP.x)),-v)*.48;
           vec3 hot=mix(vec3(1.8,1.25,.7),vec3(.8,.32,.09),smoothstep(2.2,8.5,diskR));
           float opacity=.82*fade;col+=hot*intensity*beaming*(1.-alpha);alpha+=opacity*(1.-alpha);

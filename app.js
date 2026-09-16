@@ -15,6 +15,7 @@ import {
   saveVisits,
 } from "./src/state.js";
 import { icon, fillIcons } from "./src/icons.js";
+import { startIntro } from "./src/intro.js";
 
 const $ = (selector) => document.querySelector(selector);
 const state = createState();
@@ -32,6 +33,7 @@ let scene,
   audioContext,
   soundEnabled = false;
 fillIcons();
+const intro = startIntro(objects.length);
 
 function toast(message) {
   $("#toast").textContent = message;
@@ -177,6 +179,28 @@ function syncUI() {
     });
   renderCatalog();
   updateDetails();
+  const transitionKey = `${state.selected}/${state.mode}`;
+  if (document.body.dataset.transition !== transitionKey) {
+    document.body.dataset.transition = transitionKey;
+    if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      for (const selector of [
+        "#detail-art",
+        "#detail-name",
+        "#detail-description",
+        "#view-title",
+      ]) {
+        const element = $(selector);
+        element.getAnimations().forEach((animation) => animation.cancel());
+        element.animate(
+          [
+            { opacity: 0, transform: "translateY(6px)" },
+            { opacity: 1, transform: "translateY(0)" },
+          ],
+          { duration: 240, easing: "cubic-bezier(.16,1,.3,1)" },
+        );
+      }
+    }
+  }
 }
 
 function select(id, keepTour = false) {
@@ -289,6 +313,7 @@ function renderLabels(labels, width, height) {
 }
 
 function renderError(message) {
+  intro.fail();
   $("#loading").hidden = true;
   $("#render-error").hidden = false;
   $("#render-error-text").textContent = message;
@@ -331,6 +356,7 @@ async function init() {
     if (getObject(id)) selectObject(state, id);
     scene.select(state.selected, state.arrived || "sun");
     $("#loading").hidden = true;
+    intro.ready();
     syncUI();
   } catch (error) {
     console.error("Space renderer:", error);

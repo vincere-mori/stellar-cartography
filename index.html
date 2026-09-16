@@ -19,6 +19,29 @@
     </script>
   </head>
   <body data-mode="map">
+    <dialog id="intro" aria-labelledby="intro-title">
+      <div class="intro-top">
+        <span>SC / DEEP SPACE NETWORK</span><span>01 / NAVIGATION</span>
+      </div>
+      <div class="intro-center">
+        <div class="intro-radar" aria-hidden="true">
+          <i></i><b></b><span>+</span>
+        </div>
+        <p class="intro-eyebrow">MILKY WAY EXPLORATION SYSTEM</p>
+        <h1 id="intro-title">STELLAR<br /><span>CARTOGRAPHY</span></h1>
+        <div class="intro-terminal" aria-hidden="true">
+          <p class="intro-log">[ OK ] НАВИГАЦИОННЫЙ ТЕРМИНАЛ</p>
+          <p class="intro-log">[ OK ] КАТАЛОГ ОБЪЕКТОВ</p>
+          <p class="intro-log">[ OK ] КАРТА МЛЕЧНОГО ПУТИ</p>
+          <p class="intro-log">[ OK ] ИССЛЕДОВАНИЕ ДОСТУПНО</p>
+        </div>
+      </div>
+      <div class="intro-bottom">
+        <p id="intro-status" role="status">Запуск системы навигации</p>
+        <div class="intro-track"><i id="intro-progress"></i></div>
+        <button id="intro-skip" autofocus>Пропустить / Enter</button>
+      </div>
+    </dialog>
     <header class="header">
       <a
         class="brand"
