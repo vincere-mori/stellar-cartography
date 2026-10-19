@@ -19,6 +19,8 @@ export class SpaceScene {
     this.time = 0;
     this.quality = "auto";
     this.autoRotate = false;
+    // один оборот галактики примерно за 4 минуты
+    this.galaxySpin = 0.026;
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: false,
@@ -34,7 +36,8 @@ export class SpaceScene {
     this.container.append(this.renderer.domElement);
     this.camera = new THREE.PerspectiveCamera(44, 1, 0.1, 900);
     this.scene = new THREE.Scene();
-    this.scene.add(makeBackground());
+    this.background = makeBackground();
+    this.scene.add(this.background);
     this.galaxy = makeGalaxy();
     this.scene.add(this.galaxy);
     this.objectGroup = null;
@@ -360,9 +363,15 @@ export class SpaceScene {
     } else this.resetView();
   }
 
+  worldPosition(object) {
+    return new THREE.Vector3(...object.position).applyMatrix4(
+      this.galaxy.matrixWorld,
+    );
+  }
+
   projectLabels() {
     return objects.map((object) => {
-      const point = new THREE.Vector3(...object.position).project(this.camera);
+      const point = this.worldPosition(object).project(this.camera);
       return {
         id: object.id,
         x: (point.x * 0.5 + 0.5) * this.width,
@@ -435,7 +444,7 @@ export class SpaceScene {
         const t = p / 0.25,
           eased = t * t * (3 - 2 * t);
         const target = flight.fromMap
-          ? new THREE.Vector3(...flight.object.position)
+          ? this.worldPosition(flight.object)
           : flight.target;
         const destination = target
           .clone()
@@ -477,6 +486,13 @@ export class SpaceScene {
     }
     this.controls.update(dt);
     if (this.mode === "map") {
+      if (!this.reducedMotion) {
+        this.galaxy.rotation.y -= this.galaxySpin * dt;
+        this.galaxy.updateMatrixWorld();
+      }
+      for (const child of [...this.galaxy.children, this.background])
+        if (child.material?.uniforms?.uTime)
+          child.material.uniforms.uTime.value = this.time;
       this.selectionRing.material.opacity =
         0.55 + Math.sin(this.time * 1.8) * 0.12;
       this.callbacks.onLabels(this.projectLabels(), this.width, this.height);

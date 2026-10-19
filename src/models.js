@@ -24,10 +24,12 @@ export function particles(positions, colors, sizes, opacity = 1, soft = false) {
       uHeight: { value: 800 },
       uOpacity: { value: opacity },
       uSoft: { value: soft ? 1 : 0 },
+      uTime: { value: 0 },
     },
     vertexShader: `attribute float size;
-      varying vec3 vColor; uniform float uHeight;
-      void main(){ vColor=color; vec4 mv=modelViewMatrix*vec4(position,1.);
+      varying vec3 vColor; uniform float uHeight; uniform float uTime;
+      void main(){ float seed=fract(sin(dot(position,vec3(12.9898,78.233,37.719)))*43758.5453);
+        vColor=color*(.82+.18*sin(uTime*(.8+seed*2.2)+seed*6.283)); vec4 mv=modelViewMatrix*vec4(position,1.);
         gl_Position=projectionMatrix*mv; gl_PointSize=clamp(size*uHeight/max(1.,-mv.z),1.,100.); }`,
     fragmentShader: `varying vec3 vColor; uniform float uOpacity; uniform float uSoft;
       void main(){float d=length(gl_PointCoord-.5)*2.; if(d>1.)discard;
